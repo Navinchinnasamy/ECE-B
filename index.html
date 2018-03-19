@@ -2,11 +2,11 @@
 <html lang="en">
   <head>
     <title>Friends</title>
-    <meta name="description" content="Find friends">
-    <meta name="author" content="Navin Chinnasamy">
+	<meta name="description" content="Find friends">
+	<meta name="author" content="Navin Chinnasamy">
     <meta name="viewport" content="initial-scale=1.0">
     <meta charset="utf-8">
-    <link rel="stylesheet" href="css/sweetalert.css" ></link>
+	<link rel="stylesheet" href="css/sweetalert.css" ></link>
     <link rel='stylesheet' href='css/bootstrap/bootstrap.min.css' type='text/css'/>
     <link rel='stylesheet' href='css/style.css' type='text/css'/>
     <script src="js/jquery/jquery-3.1.1.min.js"></script>
@@ -17,16 +17,14 @@
     <script src="js/easyNotify.js"></script>
   </head>
   <body>
-    <input type="hidden" id="user" value="" />
+	<input type="hidden" id="user" value="" />
     <div id="map"></div>
     <script type="text/javascript">
-	  var name = '';
+	  var name = '', unique_id = '';
 	  var map, infoWindow;
 	  var db = new PouchDB('my_chats', {auto_compaction: true});
-	  $(function(){
-		
-	  });
-      
+	        
+	  /** Get name from user if not exists in PouchDB **/
 	  function getNameFromUser(){
 		swal({
 		  title: "Your name?",
@@ -52,30 +50,34 @@
 			console.log(err);
 		  });
 		  name = inputValue;
-		  setName(name);
+		  setName(map.getCenter(), name);
 		  swal.close();
 		  $('#user').val(name);
 		  return false;
 	    });
 	  }
 	  
+	  /** Get name from PouchDB in client user's browser **/
 	  function getName(){
 		db.get('username').then(function(response){
-		  name = response['name'];
+		  unique_id = response['_rev'];
+		  name 		= response['name'];
 		  $('#user').val(name);
-		  setName(name);
+		  setName(map.getCenter(), name);
 		}).catch(function(err){
 		  console.log(err);
 		  getNameFromUser();
 		});
 	  }
 	  
-	  function setName(){
-	    infoWindow.setPosition(map.getCenter());
-		infoWindow.setContent('Name: ' + name);
+	  /** Set name in info window on map to denote the user location **/
+	  function setName(pos, content){
+	    infoWindow.setPosition(pos);
+		infoWindow.setContent(content);
 		infoWindow.open(map);
 	  }
 	  
+	  /** Initialize the map with initial configuration **/
       function initMap() {
         map = new google.maps.Map(document.getElementById('map'), {
           center: {lat: 11.197, lng: 76.844},
@@ -90,8 +92,11 @@
               lat: position.coords.latitude,
               lng: position.coords.longitude
             };
-			getName();						
+			getName();
+			storeLocationDB(pos);
             map.setCenter(pos);
+			watchLocation();
+			getFriendsList();
           }, function() {
             handleLocationError(true, infoWindow, map.getCenter());
           });
@@ -101,6 +106,7 @@
         }
       }
 
+	  /** Handle error while getting user's current location **/
       function handleLocationError(browserHasGeolocation, infoWindow, pos) {
         infoWindow.setPosition(pos);
         infoWindow.setContent(browserHasGeolocation ?
@@ -108,6 +114,75 @@
                               'Error: Your browser doesn\'t support geolocation.');
         infoWindow.open(map);
       }
+	  
+	  /** Store current location to DataBase **/
+	  function storeLocationDB(pos){
+		db.get('username').then(function(response){
+		  unique_id = response['_rev'];
+		  name 		= response['name'];
+		  var data	= {
+		    "latitude"	: pos.lat,
+			"longitude"	: pos.lng,
+			"name"		: name,
+			"unique_id"	: unique_id,
+			"req_for"	: "location_update"
+		  };
+		  $.post("requestHandler.php", data, function(res, status, xhr){
+		    console.log(res);
+		  });
+		}).catch(function(err){
+		  console.log(err);
+		});
+	  }
+	  
+	  /** Watch location change and update the new location to DataBase **/
+	  function watchLocation(){
+		if (navigator.geolocation) {
+          navigator.geolocation.watchPosition(function(position) {
+            var pos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+			storeLocationDB(pos);
+            map.setCenter(pos);
+          }, function() {
+            handleLocationError(true, infoWindow, map.getCenter());
+          });
+		} else {
+		  handleLocationError(false, infoWindow, map.getCenter());
+		}
+	  }
+	  
+	  /** Get all friends information **/
+	  function getFriendsList(){
+	    db.get('username').then(function(response){
+		  unique_id = response['_rev'];
+		  name 		= response['name'];
+		  var data	= {
+			"name"		: name,
+			"unique_id"	: unique_id,
+			"req_for"	: "get_friends_list"
+		  };
+		  $.post("requestHandler.php", data, function(res, status, xhr){
+		    displayFriends(JSON.parse(res));
+		  });
+		}).catch(function(err){
+		  console.log(err);
+		});
+	  }
+	  
+	  /** Display all friends on Map **/
+	  function displayFriends(frnds){
+	    if(frnds.length > 0){
+		  $.each(frnds, function(i, d){
+		    var pos = new google.maps.LatLng(d.latitude, d.longitude);
+		    var iw = new google.maps.InfoWindow;
+			iw.setPosition(pos);
+			iw.setContent(d.full_name);
+			iw.open(map);
+		  });
+		}
+	  }
     </script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAihz7ZUw8BTXKFuic822Op_-AfD4dRkhI&callback=initMap"></script>
   </body>
