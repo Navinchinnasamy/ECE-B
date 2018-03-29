@@ -16,7 +16,7 @@
 Class requestHandler {
   private $conn;
   function __construct(){
-	$this->conn = new PDO("mysql:dbname=navin_contacts;host=coffeewithme.comze.com", "navin", "21594");
+	$this->conn = new PDO("mysql:dbname=navin_contacts;host=localhost", "navin", "21594");
   }
   
   function locationUpdate($data){
