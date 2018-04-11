@@ -38,9 +38,11 @@
 		email: 'navin.c@kggroup.com'
 	  }); */
 	  
+	  /*
 	  fireDBref.ref('Friends').once('value').then(function(snapshot) {
 		console.log(snapshot.val());
 	  });
+	  */
 	</script>
   </head>
   <body>
@@ -182,7 +184,6 @@
 		  name 		= response['name'];
 
 		  fireDBref.ref('Friends').once('value').then(function(snapshot) {
-			console.log(snapshot.val());
 			displayFriends(snapshot.val(), unique_id);
 		  });
 		}).catch(function(err){
@@ -192,11 +193,12 @@
 	  
 	  /** Display all friends on Map **/
 	  function displayFriends(frnds, unique_id){
-	    if(frnds.length > 0){
+	    if(!$.isEmptyObject(frnds)){
 		  $.each(frnds, function(i, d){
 			if(i == unique_id){
 			  return true;
 			}
+			
 		    var pos = new google.maps.LatLng(d.latitude, d.longitude);
 		    var iw = new google.maps.InfoWindow;
 			iw.setPosition(pos);
