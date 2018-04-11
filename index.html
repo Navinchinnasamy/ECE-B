@@ -180,13 +180,10 @@
 	    db.get('username').then(function(response){
 		  unique_id = response['_rev'];
 		  name 		= response['name'];
-		  var data	= {
-			"name"		: name,
-			"unique_id"	: unique_id,
-			"req_for"	: "get_friends_list"
-		  };
+
 		  fireDBref.ref('Friends').once('value').then(function(snapshot) {
 			console.log(snapshot.val());
+			displayFriends(snapshot.val(), unique_id);
 		  });
 		}).catch(function(err){
 		  console.log(err);
@@ -194,13 +191,16 @@
 	  }
 	  
 	  /** Display all friends on Map **/
-	  function displayFriends(frnds){
+	  function displayFriends(frnds, unique_id){
 	    if(frnds.length > 0){
 		  $.each(frnds, function(i, d){
+			if(i == unique_id){
+			  return true;
+			}
 		    var pos = new google.maps.LatLng(d.latitude, d.longitude);
 		    var iw = new google.maps.InfoWindow;
 			iw.setPosition(pos);
-			iw.setContent(d.full_name);
+			iw.setContent(d.dispalyname);
 			iw.open(map);
 		  });
 		}
