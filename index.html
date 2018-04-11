@@ -15,6 +15,33 @@
     <script src="js/socket/socket.io-1.4.5.js"></script>
     <script src="js/sweetalert.min.js"></script>
     <script src="js/easyNotify.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/4.12.0/firebase.js"></script>
+	<script>
+	  // Initialize Firebase
+	  var config = {
+		apiKey: "AIzaSyCWw7YFlWavnQwjYXiDrDJSuP3vaW10dEA",
+		authDomain: "my-map-project-1309.firebaseapp.com",
+		databaseURL: "https://my-map-project-1309.firebaseio.com",
+		projectId: "my-map-project-1309",
+		storageBucket: "my-map-project-1309.appspot.com",
+		messagingSenderId: "362279565765",
+		rules: {
+			".read": true,
+			".write": true
+		}
+	  };
+	  firebase.initializeApp(config);
+	  
+	  var fireDBref = firebase.database();	
+	  /* fireDBref.set({
+		name: 'Navin C',
+		email: 'navin.c@kggroup.com'
+	  }); */
+	  
+	  fireDBref.ref('Friends').once('value').then(function(snapshot) {
+		console.log(snapshot.val());
+	  });
+	</script>
   </head>
   <body>
 	<input type="hidden" id="user" value="" />
@@ -120,15 +147,10 @@
 		db.get('username').then(function(response){
 		  unique_id = response['_rev'];
 		  name 		= response['name'];
-		  var data	= {
-		    "latitude"	: pos.lat,
-			"longitude"	: pos.lng,
-			"name"		: name,
-			"unique_id"	: unique_id,
-			"req_for"	: "location_update"
-		  };
-		  $.post("requestHandler.php", data, function(res, status, xhr){
-		    console.log(res);
+		  fireDBref.ref('Friends/'+unique_id).set({
+			dispalyname: name,
+			latitude: pos.lat,
+			longitude: pos.lng
 		  });
 		}).catch(function(err){
 		  console.log(err);
@@ -163,8 +185,8 @@
 			"unique_id"	: unique_id,
 			"req_for"	: "get_friends_list"
 		  };
-		  $.post("requestHandler.php", data, function(res, status, xhr){
-		    displayFriends(JSON.parse(res));
+		  fireDBref.ref('Friends').once('value').then(function(snapshot) {
+			console.log(snapshot.val());
 		  });
 		}).catch(function(err){
 		  console.log(err);
