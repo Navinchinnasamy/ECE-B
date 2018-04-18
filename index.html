@@ -50,7 +50,7 @@
     <div id="map"></div>
     <script type="text/javascript">
 	  var name = '', unique_id = '';
-	  var map, infoWindow;
+	  var map, infoWindow, bounds;
 	  var db = new PouchDB('my_chats', {auto_compaction: true});
 	        
 	  /** Get name from user if not exists in PouchDB **/
@@ -113,7 +113,8 @@
           zoom: 9
         });
         infoWindow = new google.maps.InfoWindow;
-
+	bounds = new google.maps.LatLngBounds();
+	      
         // Try HTML5 geolocation.
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(function(position) {
@@ -200,11 +201,13 @@
 			}
 			
 		    var pos = new google.maps.LatLng(d.latitude, d.longitude);
+		    bounds.extend(myLatLng);
 		    var iw = new google.maps.InfoWindow;
 			iw.setPosition(pos);
 			iw.setContent(d.dispalyname);
 			iw.open(map);
 		  });
+		   map.fitBounds(bounds);
 		}
 	  }
     </script>
